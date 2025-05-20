@@ -10,7 +10,7 @@ module.exports = {
     },
     amoy: {
       url: process.env.ALCHEMY_API_URL,
-      accounts: [process.env.OWNER_PRIVATE_KEY]
+      accounts: [process.env.PRIVATE_KEY],
     },
   },
 };
