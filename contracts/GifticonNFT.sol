@@ -5,9 +5,7 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-
 contract GifticonNFT is ERC721URIStorage, IERC721Receiver, Ownable {
-    uint256 public constant DEPOSIT_AMOUNT = 0.1 ether;
     uint256 public nextTokenId;
 
     enum Status {
@@ -50,9 +48,10 @@ contract GifticonNFT is ERC721URIStorage, IERC721Receiver, Ownable {
     function registerGifticon(
         string memory ipfsHash,
         string memory tokenURI,
-        uint256 expiryDate
+        uint256 expiryDate,
+        uint256 depositAmount
     ) external payable {
-        require(msg.value == DEPOSIT_AMOUNT, "Incorrect deposit");
+        require(msg.value == depositAmount, "Incorrect deposit");
 
         uint256 tokenId = nextTokenId++;
         _mint(msg.sender, tokenId);
@@ -60,7 +59,7 @@ contract GifticonNFT is ERC721URIStorage, IERC721Receiver, Ownable {
 
         gifticons[tokenId] = Gifticon({
             originalOwner: msg.sender,
-            depositAmount: msg.value,
+            depositAmount: depositAmount,
             ipfsHash: ipfsHash,
             status: Status.Listed,
             burnTimestamp: expiryDate
@@ -87,7 +86,10 @@ contract GifticonNFT is ERC721URIStorage, IERC721Receiver, Ownable {
     function reportFraud(uint256 tokenId) external {
         Gifticon storage g = gifticons[tokenId];
         require(g.status == Status.Redeemed, "Not redeemable");
-        require(block.timestamp <= g.burnTimestamp + 1 days, "Report window closed");
+        require(
+            block.timestamp <= g.burnTimestamp + 1 days,
+            "Report window closed"
+        );
 
         g.status = Status.Penalized;
         uint256 penaltyAmount = g.depositAmount;
@@ -96,7 +98,6 @@ contract GifticonNFT is ERC721URIStorage, IERC721Receiver, Ownable {
         emit FraudReported(tokenId, msg.sender);
         emit PenaltyApplied(tokenId, penaltyAmount);
     }
-
 
     // 4. 담보 반환 (NFT 소각 1일 후 상환요청)
     function refundDeposit(uint256 tokenId) external {
@@ -119,5 +120,21 @@ contract GifticonNFT is ERC721URIStorage, IERC721Receiver, Ownable {
     // 컨트랙트에 남은 잔고 회수 (예: 수수료나 소각된 담보)
     function withdraw() external onlyOwner {
         payable(owner()).transfer(address(this).balance);
+    }
+
+    function tokensOfOwner(
+        address owner
+    ) external view returns (uint256[] memory) {
+        uint256 balance = balanceOf(owner);
+        uint256[] memory result = new uint256[](balance);
+        uint256 count = 0;
+
+        for (uint256 i = 0; i < nextTokenId; i++) {
+            if (ownerOf(i) == owner) {
+                result[count++] = i;
+            }
+        }
+
+        return result;
     }
 }
