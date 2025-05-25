@@ -14,22 +14,31 @@ describe("GifticonMarketplace", function () {
     GifticonNFT = await ethers.getContractFactory("GifticonNFT");
     gifticon = await GifticonNFT.deploy();
 
-    GifticonMarketplace = await ethers.getContractFactory("GifticonMarketplace");
-    marketplace = await GifticonMarketplace.deploy(gifticon.target ?? gifticon.address);
+    GifticonMarketplace = await ethers.getContractFactory(
+      "GifticonMarketplace"
+    );
+    marketplace = await GifticonMarketplace.deploy(
+      gifticon.target ?? gifticon.address
+    );
   });
 
   it("should allow listing and buying through marketplace", async () => {
     // 1. user1이 기프티콘 등록
-    await gifticon.connect(user1).registerGifticon("QmIPFS", "ipfs://token.json", 0, {
-      value: deposit,
-    });
+    await gifticon
+      .connect(user1)
+      .registerGifticon("QmIPFS", "ipfs://token.json", 0, deposit, {
+        value: deposit,
+      });
 
     // 2. user1이 NFT를 marketplace에 승인
-    await gifticon.connect(user1).approve(marketplace.target ?? marketplace.address, 0);
+    await gifticon
+      .connect(user1)
+      .approve(marketplace.target ?? marketplace.address, 0);
 
     // 3. user1이 NFT를 marketplace에 등록
-    await expect(marketplace.connect(user1).listItem(0, ethers.parseEther("1")))
-      .to.emit(marketplace, "ItemListed");
+    await expect(
+      marketplace.connect(user1).listItem(0, ethers.parseEther("1"))
+    ).to.emit(marketplace, "ItemListed");
 
     // 4. user2가 NFT 구매
     const sellerBalanceBefore = await ethers.provider.getBalance(user1.address);
@@ -37,8 +46,7 @@ describe("GifticonMarketplace", function () {
       value: ethers.parseEther("1"),
     });
     const receipt = await tx.wait();
-    const gasUsed =
-      receipt.gasUsed * tx.gasPrice;
+    const gasUsed = receipt.gasUsed * tx.gasPrice;
 
     const sellerBalanceAfter = await ethers.provider.getBalance(user1.address);
 
@@ -51,9 +59,11 @@ describe("GifticonMarketplace", function () {
   });
 
   it("should only list tokens owned and in Listed status", async () => {
-    await gifticon.connect(user1).registerGifticon("QmIPFS", "ipfs://token.json", 0, {
-      value: deposit,
-    });
+    await gifticon
+      .connect(user1)
+      .registerGifticon("QmIPFS", "ipfs://token.json", 0, deposit, {
+        value: deposit,
+      });
 
     // 승인 없이 list 시도 → 실패
     await expect(
@@ -72,9 +82,11 @@ describe("GifticonMarketplace", function () {
   });
 
   it("should allow cancelListing only by seller", async () => {
-    await gifticon.connect(user1).registerGifticon("QmIPFS", "ipfs://token.json", 0, {
-      value: deposit,
-    });
+    await gifticon
+      .connect(user1)
+      .registerGifticon("QmIPFS", "ipfs://token.json", 0, deposit, {
+        value: deposit,
+      });
     await gifticon
       .connect(user1)
       .approve(marketplace.target ?? marketplace.address, 0);
