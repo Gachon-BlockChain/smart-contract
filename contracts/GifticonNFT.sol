@@ -14,6 +14,11 @@ contract GifticonNFT is ERC721URIStorage, IERC721Receiver, Ownable {
         Penalized
     }
 
+    struct GifticonWithId {
+        uint256 tokenId;
+        Gifticon gifticon;
+    }
+
     struct Gifticon {
         address originalOwner;
         uint256 depositAmount;
@@ -135,6 +140,24 @@ contract GifticonNFT is ERC721URIStorage, IERC721Receiver, Ownable {
             }
         }
 
+        return result;
+    }
+
+    function gifticonsWithIdOfOwner(
+        address owner
+    ) external view returns (GifticonWithId[] memory) {
+        uint256 balance = balanceOf(owner);
+        GifticonWithId[] memory result = new GifticonWithId[](balance);
+        uint256 count = 0;
+
+        for (uint256 i = 0; i < nextTokenId; i++) {
+            if (ownerOf(i) == owner) {
+                result[count++] = GifticonWithId({
+                    tokenId: i,
+                    gifticon: gifticons[i]
+                });
+            }
+        }
         return result;
     }
 }
