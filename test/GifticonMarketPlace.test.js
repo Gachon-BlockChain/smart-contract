@@ -26,7 +26,7 @@ describe("GifticonMarketplace", function () {
     // 1. user1이 기프티콘 등록
     await gifticon
       .connect(user1)
-      .registerGifticon("QmIPFS", "ipfs://token.json", 0, deposit, {
+      .registerGifticon( 0, deposit, {
         value: deposit,
       });
 
@@ -61,7 +61,7 @@ describe("GifticonMarketplace", function () {
   it("should only list tokens owned and in Listed status", async () => {
     await gifticon
       .connect(user1)
-      .registerGifticon("QmIPFS", "ipfs://token.json", 0, deposit, {
+      .registerGifticon( 0, deposit, {
         value: deposit,
       });
 
@@ -84,7 +84,7 @@ describe("GifticonMarketplace", function () {
   it("should allow cancelListing only by seller", async () => {
     await gifticon
       .connect(user1)
-      .registerGifticon("QmIPFS", "ipfs://token.json", 0, deposit, {
+      .registerGifticon( 0, deposit, {
         value: deposit,
       });
     await gifticon

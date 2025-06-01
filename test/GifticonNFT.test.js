@@ -15,11 +15,9 @@ describe("GifticonNFT", function () {
 
   it("should register a gifticon and mint NFT", async () => {
     await expect(
-      gifticon
-        .connect(user1)
-        .registerGifticon("QmIPFS", "ipfs://token.json", 0, deposit, {
-          value: deposit,
-        })
+      gifticon.connect(user1).registerGifticon(0, deposit, {
+        value: deposit,
+      })
     ).to.emit(gifticon, "GifticonRegistered");
 
     expect(await gifticon.ownerOf(0)).to.equal(user1.address);
@@ -29,20 +27,16 @@ describe("GifticonNFT", function () {
     const wrongDeposit = ethers.parseEther("0.05");
 
     await expect(
-      gifticon
-        .connect(user1)
-        .registerGifticon("QmWrong", "ipfs://wrong.json", 0, deposit, {
-          value: wrongDeposit,
-        })
+      gifticon.connect(user1).registerGifticon(0, deposit, {
+        value: wrongDeposit,
+      })
     ).to.be.revertedWith("Incorrect deposit");
   });
 
   it("should allow redemption of gifticon", async () => {
-    await gifticon
-      .connect(user1)
-      .registerGifticon("QmIPFS", "ipfs://token.json", 0, deposit, {
-        value: deposit,
-      });
+    await gifticon.connect(user1).registerGifticon(0, deposit, {
+      value: deposit,
+    });
 
     const tx = await gifticon.connect(user1).redeemGifticon(0);
     const receipt = await tx.wait();
@@ -71,11 +65,9 @@ describe("GifticonNFT", function () {
   });
 
   it("should refund deposit to original owner on refundDeposit", async () => {
-    await gifticon
-      .connect(user1)
-      .registerGifticon("QmIPFS", "ipfs://token.json", 0, deposit, {
-        value: deposit,
-      });
+    await gifticon.connect(user1).registerGifticon(0, deposit, {
+      value: deposit,
+    });
 
     const before = await ethers.provider.getBalance(user1.address);
 
@@ -90,11 +82,9 @@ describe("GifticonNFT", function () {
   });
 
   it("should allow fraud report within 1 day", async () => {
-    await gifticon
-      .connect(user1)
-      .registerGifticon("QmIPFS", "ipfs://token.json", 0, deposit, {
-        value: deposit,
-      });
+    await gifticon.connect(user1).registerGifticon(0, deposit, {
+      value: deposit,
+    });
     await gifticon.connect(user1).redeemGifticon(0);
 
     await expect(gifticon.connect(user2).reportFraud(0))
@@ -103,11 +93,9 @@ describe("GifticonNFT", function () {
   });
 
   it("should fail fraud report after 1 day", async () => {
-    await gifticon
-      .connect(user1)
-      .registerGifticon("QmIPFS", "ipfs://token.json", 0, deposit, {
-        value: deposit,
-      });
+    await gifticon.connect(user1).registerGifticon(0, deposit, {
+      value: deposit,
+    });
     await gifticon.connect(user1).redeemGifticon(0);
 
     // 시간 2일 증가
@@ -120,11 +108,9 @@ describe("GifticonNFT", function () {
   });
 
   it("should allow owner to withdraw contract balance", async () => {
-    await gifticon
-      .connect(user1)
-      .registerGifticon("QmIPFS", "ipfs://token.json", 0, deposit, {
-        value: deposit,
-      });
+    await gifticon.connect(user1).registerGifticon(0, deposit, {
+      value: deposit,
+    });
     await gifticon.connect(user1).redeemGifticon(0);
     await gifticon.connect(user2).reportFraud(0); // deposit stays in contract
 
@@ -154,33 +140,32 @@ describe("GifticonNFT", function () {
   });
 
   it("should return all tokenIds owned by a user", async () => {
-    await gifticon
-      .connect(user1)
-      .registerGifticon("QmHash1", "ipfs://1.json", 0, deposit, {
-        value: deposit,
-      });
-    await gifticon
-      .connect(user1)
-      .registerGifticon("QmHash2", "ipfs://2.json", 0, deposit, {
-        value: deposit,
-      });
-    await gifticon
-      .connect(user2)
-      .registerGifticon("QmHash3", "ipfs://3.json", 0, deposit, {
-        value: deposit,
-      });
+    await gifticon.connect(user1).registerGifticon(0, deposit, {
+      value: deposit,
+    });
+    await gifticon.connect(user1).registerGifticon(0, deposit, {
+      value: deposit,
+    });
+    await gifticon.connect(user2).registerGifticon(0, deposit, {
+      value: deposit,
+    });
 
     const tokenIds = await gifticon.tokensOfOwner(user1.address);
     expect(tokenIds.length).to.equal(2);
     expect(tokenIds.map((id) => id.toString())).to.include.members(["0", "1"]);
   });
 
-  it("should allow token owner to update metadata URI", async () => {
+  it("should allow token owner to update URI and IPFS hash", async () => {
+    await gifticon.connect(user1).registerGifticon(0, deposit, {
+      value: deposit,
+    });
+
     await gifticon
       .connect(user1)
-      .registerGifticon("QmIPFS", "", 0, deposit, { value: deposit });
+      .setTokenURIAndIpfsHash(0, "ipfs://updated.json", "QmUpdatedHash");
 
-    await gifticon.connect(user1).setTokenURI(0, "ipfs://new.json");
-    expect(await gifticon.tokenURI(0)).to.equal("ipfs://new.json");
+    expect(await gifticon.tokenURI(0)).to.equal("ipfs://updated.json");
+    const g = await gifticon.gifticons(0);
+    expect(g.ipfsHash).to.equal("QmUpdatedHash");
   });
 });
