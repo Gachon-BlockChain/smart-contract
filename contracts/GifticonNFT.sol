@@ -31,13 +31,14 @@ contract GifticonNFT is ERC721URIStorage, IERC721Receiver, Ownable {
 
     event GifticonRegistered(
         uint256 indexed tokenId,
-        address indexed owner,
-        string ipfsHash
+        address indexed owner
     );
+
     event GifticonRedeemed(uint256 indexed tokenId, address indexed redeemer);
     event FraudReported(uint256 indexed tokenId, address indexed reporter);
     event PenaltyApplied(uint256 indexed tokenId, uint256 amountBurned);
     event TokenURIUpdated(uint256 indexed tokenId, string newURI);
+    event Debug(string message);
 
     constructor() ERC721("GifticonNFT", "GFT") Ownable(msg.sender) {}
 
@@ -52,30 +53,24 @@ contract GifticonNFT is ERC721URIStorage, IERC721Receiver, Ownable {
 
     // 1. 기프티콘 등록 + 담보 입금 + NFT 발행
     function registerGifticon(
-        string memory ipfsHash,
-        string memory tokenURI,
         uint256 expiryDate,
         uint256 depositAmount
     ) external payable {
         require(msg.value == depositAmount, "Incorrect deposit");
 
         uint256 tokenId = nextTokenId++;
-        _safeMint(msg.sender, tokenId);
-
-        // 토큰 URI는 비어 있어도 OK
-        if (bytes(tokenURI).length > 0) {
-            _setTokenURI(tokenId, tokenURI);
-        }
+        _mint(msg.sender, tokenId);
+        emit Debug("mint complete"); // 새 이벤트 추가
 
         gifticons[tokenId] = Gifticon({
             originalOwner: msg.sender,
             depositAmount: depositAmount,
-            ipfsHash: ipfsHash,
+            ipfsHash: "",
             status: Status.Listed,
             burnTimestamp: expiryDate
         });
 
-        emit GifticonRegistered(tokenId, msg.sender, ipfsHash);
+        emit GifticonRegistered(tokenId, msg.sender);
     }
 
     // 2. 구매자가 NFT를 컨트랙트로 보내 교환 요청
@@ -167,13 +162,15 @@ contract GifticonNFT is ERC721URIStorage, IERC721Receiver, Ownable {
     }
 
     // 👇 맨 아래에 추가
-    function setTokenURI(uint256 tokenId, string memory newTokenURI) external {
+    function setTokenURIAndIpfsHash(uint256 tokenId, string memory newTokenURI, string memory ipfsHash ) external {
         require(
             ownerOf(tokenId) == msg.sender,
             "Only token owner can update URI"
         );
 
+        gifticons[tokenId].ipfsHash = ipfsHash;
         _setTokenURI(tokenId, newTokenURI);
+        
         emit TokenURIUpdated(tokenId, newTokenURI);
     }
 }
