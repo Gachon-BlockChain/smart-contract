@@ -37,6 +37,7 @@ contract GifticonNFT is ERC721URIStorage, IERC721Receiver, Ownable {
     event GifticonRedeemed(uint256 indexed tokenId, address indexed redeemer);
     event FraudReported(uint256 indexed tokenId, address indexed reporter);
     event PenaltyApplied(uint256 indexed tokenId, uint256 amountBurned);
+    event TokenURIUpdated(uint256 indexed tokenId, string newURI);
 
     constructor() ERC721("GifticonNFT", "GFT") Ownable(msg.sender) {}
 
@@ -59,8 +60,12 @@ contract GifticonNFT is ERC721URIStorage, IERC721Receiver, Ownable {
         require(msg.value == depositAmount, "Incorrect deposit");
 
         uint256 tokenId = nextTokenId++;
-        _mint(msg.sender, tokenId);
-        _setTokenURI(tokenId, tokenURI); // 메타데이터 (ipfs://...) 포함 가능
+        _safeMint(msg.sender, tokenId);
+
+        // 토큰 URI는 비어 있어도 OK
+        if (bytes(tokenURI).length > 0) {
+            _setTokenURI(tokenId, tokenURI);
+        }
 
         gifticons[tokenId] = Gifticon({
             originalOwner: msg.sender,
@@ -159,5 +164,16 @@ contract GifticonNFT is ERC721URIStorage, IERC721Receiver, Ownable {
             }
         }
         return result;
+    }
+
+    // 👇 맨 아래에 추가
+    function setTokenURI(uint256 tokenId, string memory newTokenURI) external {
+        require(
+            ownerOf(tokenId) == msg.sender,
+            "Only token owner can update URI"
+        );
+
+        _setTokenURI(tokenId, newTokenURI);
+        emit TokenURIUpdated(tokenId, newTokenURI);
     }
 }

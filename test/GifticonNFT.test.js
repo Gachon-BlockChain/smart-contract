@@ -174,4 +174,13 @@ describe("GifticonNFT", function () {
     expect(tokenIds.length).to.equal(2);
     expect(tokenIds.map((id) => id.toString())).to.include.members(["0", "1"]);
   });
+
+  it("should allow token owner to update metadata URI", async () => {
+    await gifticon
+      .connect(user1)
+      .registerGifticon("QmIPFS", "", 0, deposit, { value: deposit });
+
+    await gifticon.connect(user1).setTokenURI(0, "ipfs://new.json");
+    expect(await gifticon.tokenURI(0)).to.equal("ipfs://new.json");
+  });
 });
